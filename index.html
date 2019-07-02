@@ -1,19 +1,170 @@
 <!doctype html>
-<html class="no-js" lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <title>My Website</title>
-        <meta name="description" content="This is my website.">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css">
-    </head>
-    <body>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-        <h1>My Website</h1>
-        <p>This is my website.</p>
+    <title>Price Compare</title>
+  </head>
+  <body>
+    <div class="container">
+        <h1 class="text-center">Price Compare</h1>
+        <div class="text-center mb-3">
+            <button type="button" class="btn btn-primary" id="resetButton">Reset</button>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">$</div>
+                            </div>
+                            <input type="text" class="form-control" id="firstCost">
+                        </div>
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">#</div>
+                            </div>
+                            <input type="text" class="form-control" id="firstQuantity">
+                        </div>
+                        <div class="alert alert-dark d-none" role="alert" id="firstAlert1"></div>
+                        <div class="alert alert-dark d-none" role="alert" id="firstAlert2"></div>
+                    </div>
+                </div>
+            </div>
+           <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">$</div>
+                            </div>
+                            <input type="text" class="form-control" id="secondCost">
+                        </div>
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">#</div>
+                            </div>
+                            <input type="text" class="form-control" id="secondQuantity">
+                        </div>
+                        <div class="alert alert-dark d-none" role="alert" id="secondAlert1"></div>
+                        <div class="alert alert-dark d-none" role="alert" id="secondAlert2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function () {
+            var $firstCost = $('#firstCost');
+            var $firstQuantity = $('#firstQuantity');
+            var $firstAlert1 = $('#firstAlert1');
+            var $firstAlert2 = $('#firstAlert2');
+            var $secondCost = $('#secondCost');
+            var $secondQuantity = $('#secondQuantity');
+            var $secondAlert1 = $('#secondAlert1');
+            var $secondAlert2 = $('#secondAlert2');
+            var $resetButton = $('#resetButton');
+            
+            var whitespaceRegex = /^\s*$/;
+            
+            var myIsNaN = function (n) {
+                return n !== n;
+            }
+            
+            var getValueFromTextbox = function ($textbox) {
+                var val = $textbox.val();
+                if (whitespaceRegex.test(val)) return null;
+                var r = +val;
+                if (myIsNaN(r)) return null;
+                return r;
+            }
+            
+            var computeRatio = function ($costText, $qtyText) {
+                var c = getValueFromTextbox($costText);
+                var q = getValueFromTextbox($qtyText);
+                var r = null;
+                if (c !== null && q !== null) {
+                    r = c / q;
+                }
+                return r;
+            };
+            
+            var updateAlert = function ($alert1, $alert2, r, otherR) {
+                if (r !== null) {
+                    $alert1.removeClass();
+                    $alert2.removeClass();
+                    if (otherR === null || otherR <= r) {
+                        $alert1.addClass('alert alert-dark');
+                        $alert2.addClass('alert alert-dark');
+                    }
+                    else {
+                        $alert1.addClass('alert alert-success');
+                        $alert2.addClass('alert alert-success');
+                    }
+                    {
+                        var text = '$' + r.toFixed(2) + ' per unit.';
+                        $alert1.html(text);
+                    }
+                    if (otherR !== null) {
+                        if (r < otherR) {
+                            var p = 100 - r * 100 / otherR;
+                            var text = p.toFixed(0) + '% cheaper!';
+                            $alert2.text(text);
+                        }
+                        else if (r > otherR) {
+                            var p = r * 100 / otherR - 100;
+                            var text = p.toFixed(0) + '% more expensive.';
+                            $alert2.text(text);
+                        }
+                        else {
+                            var text = '<br>Same price!';
+                            alert2.text(text);
+                        }
+                    }
+                    else {
+                        $alert2.addClass('d-none');
+                    }
+                }
+                else {
+                    $alert1.addClass('d-none');
+                    $alert2.addClass('d-none');
+                }
+            };
 
-    </body>
+            var compute = function () {
+                // Get ratios.
+                var r1 = computeRatio($firstCost, $firstQuantity);
+                var r2 = computeRatio($secondCost, $secondQuantity);
+                // Setup alerts.
+                updateAlert($firstAlert1, $firstAlert2, r1, r2);
+                updateAlert($secondAlert1, $secondAlert2, r2, r1);
+            };
+            
+            $firstCost.on('input', compute);
+            $firstQuantity.on('input', compute);
+            $secondCost.on('input', compute);
+            $secondQuantity.on('input', compute);
+            
+            $resetButton.on('click', function () {
+                $firstCost.val('');
+                $firstQuantity.val('');
+                $secondCost.val('');
+                $secondQuantity.val('');
+                $firstCost.trigger('input');
+            });
+        });
+    </script>
+  </body>
 </html>
