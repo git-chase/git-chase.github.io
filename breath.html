@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breathing Metronome</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0;
+      font-family: Arial, sans-serif;
+      background-color: #000;
+      color: #fff;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .control-group {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      width: 300px;
+    }
+
+    .control-group h3 {
+      margin: 0 0 15px 0;
+      color: #1e90ff;
+      font-weight: normal;
+    }
+
+    .control {
+      margin-bottom: 10px;
+    }
+
+    .control label {
+      display: inline-block;
+      margin-bottom: 5px;
+    }
+
+    .control span {
+      display: inline-block;
+    }
+
+    input[type="range"] {
+      width: 200px;
+      display: block;  /* Force the slider to be on its own line */
+      margin-top: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #1e90ff;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      transition: background-color 0.3s;
+      margin-bottom: 15px;
+    }
+
+    button:hover {
+      background-color: #4682b4;
+    }
+
+    input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .task-display {
+      font-size: 24px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <div class="control-group">
+      <button id="startButton">Start Noise</button>
+      
+      <!-- Mode toggle -->
+      <div class="control">
+        <label for="modeToggle">Separate Inhale/Exhale? </label>
+        <input type="checkbox" id="modeToggle">
+      </div>
+      
+      <!-- Inhale duration control (always visible) -->
+      <div class="control" id="inhaleControl">
+        <label for="inhaleSlider">Inhale Duration:</label>
+        <span id="inhaleValue">8</span>s
+        <input type="range" id="inhaleSlider" min="1" max="30" step="1" value="8">
+      </div>
+      
+      <!-- Exhale duration control (always visible, disabled when checkbox unchecked) -->
+      <div class="control" id="exhaleControl">
+        <label for="exhaleSlider">Exhale Duration:</label>
+        <span id="exhaleValue">8</span>s
+        <input type="range" id="exhaleSlider" min="1" max="30" step="1" value="8">
+      </div>
+      
+      <div class="control">
+        <label for="volumeSlider">Volume:</label>
+        <span id="volumeValue">50</span>
+        <input type="range" id="volumeSlider" min="0" max="100" step="1" value="100">
+      </div>
+      <div class="control">
+        <label for="boostSlider">Volume Boost:</label>
+        <span id="boostValue">0</span>
+        <input type="range" id="boostSlider" min="0" max="1000" step="1" value="0">
+      </div>
+      <div class="control">
+        <label for="minutesSlider">Minutes:</label>
+        <span id="minutesValue">10</span>min
+        <input type="range" id="minutesSlider" min="1" max="60" step="1" value="10">
+      </div>
+      <div class="control">
+        <label for="increaseSlider">Increase:</label>
+        <span id="increaseValue">0</span>
+        <input type="range" id="increaseSlider" min="-0.5" max="0.5" step="0.05" value="0">
+      </div>
+      <div class="control">
+        <label for="minimumSlider">Minimum:</label>
+        <span id="minimumValue">1</span>s
+        <input type="range" id="minimumSlider" min="1" max="30" step="1" value="1">
+      </div>
+      <div class="control">
+        <label for="maximumSlider">Maximum:</label>
+        <span id="maximumValue">15</span>s
+        <input type="range" id="maximumSlider" min="1" max="30" step="1" value="15">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const startButton = document.getElementById('startButton');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeValue = document.getElementById('volumeValue');
+    const boostSlider = document.getElementById('boostSlider');
+    const boostValue = document.getElementById('boostValue');
+    const minutesSlider = document.getElementById('minutesSlider');
+    const minutesValue = document.getElementById('minutesValue');
+    const increaseSlider = document.getElementById('increaseSlider');
+    const increaseValue = document.getElementById('increaseValue');
+    const maximumSlider = document.getElementById('maximumSlider');
+    const maximumValue = document.getElementById('maximumValue');
+    const minimumSlider = document.getElementById('minimumSlider');
+    const minimumValue = document.getElementById('minimumValue');
+    const modeToggle = document.getElementById('modeToggle');
+    const inhaleSlider = document.getElementById('inhaleSlider');
+    const inhaleValue = document.getElementById('inhaleValue');
+    const exhaleSlider = document.getElementById('exhaleSlider');
+    const exhaleValue = document.getElementById('exhaleValue');
+    const inhaleControl = document.getElementById('inhaleControl');
+    const exhaleControl = document.getElementById('exhaleControl');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Reset slider values to their defaults on page load
+      modeToggle.checked = false;
+      exhaleSlider.disabled = true;
+
+      volumeSlider.value = 50;
+      volumeValue.textContent = volumeSlider.value;
+
+      boostSlider.value = 0;
+      boostValue.textContent = boostSlider.value;
+
+      minutesSlider.value = 10;
+      minutesValue.textContent = minutesSlider.value;
+
+      increaseSlider.value = 0;
+      increaseValue.textContent = increaseSlider.value;
+
+      maximumSlider.value = 15;
+      maximumValue.textContent = maximumSlider.value;
+
+      minimumSlider.value = 1;
+      minimumValue.textContent = minimumSlider.value;
+
+      inhaleSlider.value = 8;
+      inhaleValue.textContent = inhaleSlider.value;
+      exhaleSlider.value = 8;
+      exhaleValue.textContent = exhaleSlider.value;
+    });
+
+    volumeSlider.addEventListener('input', () => {
+      volumeValue.textContent = volumeSlider.value;
+    });
+
+    boostSlider.addEventListener('input', () => {
+      boostValue.textContent = boostSlider.value;
+    });
+
+    minutesSlider.addEventListener('input', () => {
+      minutesValue.textContent = minutesSlider.value;
+    });
+
+    increaseSlider.addEventListener('input', () => {
+      increaseValue.textContent = parseFloat(increaseSlider.value).toFixed(2);
+    });
+
+    minimumSlider.addEventListener('input', () => {
+      minimumValue.textContent = minimumSlider.value;
+      if (parseInt(maximumSlider.value) < parseInt(minimumSlider.value)) {
+        maximumSlider.value = minimumSlider.value;
+        maximumValue.textContent = maximumSlider.value;
+      }
+    });
+
+    maximumSlider.addEventListener('input', () => {
+      maximumValue.textContent = maximumSlider.value;
+      if (parseInt(maximumSlider.value) < parseInt(minimumSlider.value)) {
+        minimumSlider.value = maximumSlider.value;
+        minimumValue.textContent = minimumSlider.value;
+      }
+    });
+
+    // Mode toggle event handler
+    modeToggle.addEventListener('change', () => {
+      if (modeToggle.checked) {
+        // Enable separate inhale/exhale controls
+        exhaleSlider.disabled = false;
+      } else {
+        // Disable exhale slider and sync it with inhale
+        exhaleSlider.disabled = true;
+        exhaleSlider.value = inhaleSlider.value;
+        exhaleValue.textContent = exhaleSlider.value;
+      }
+    });
+
+    // Inhale slider event handler
+    inhaleSlider.addEventListener('input', () => {
+      inhaleValue.textContent = inhaleSlider.value;
+      // If checkbox is unchecked, sync exhale slider with inhale
+      if (!modeToggle.checked) {
+        exhaleSlider.value = inhaleSlider.value;
+        exhaleValue.textContent = exhaleSlider.value;
+      }
+    });
+
+    // Exhale slider event handler
+    exhaleSlider.addEventListener('input', () => {
+      exhaleValue.textContent = exhaleSlider.value;
+    });
+
+    // Note: This function is self-contained: it does not use any global variables.
+    function createBrownNoise(audioContext, durationInSeconds, isHighPitch = false) {
+      const bufferSize = durationInSeconds * audioContext.sampleRate;
+      const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+
+      let lastOut = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        
+        if (isHighPitch) {
+          // For high pitch (inhales): use more high-frequency components
+          output[i] = (lastOut + (0.10 * white)) / 1.10; // Less filtering for more high frequencies
+          lastOut = output[i];
+          output[i] *= 1.0; // Higher amplitude for brighter sound
+        } else {
+          // For low pitch (exhales): use more low-frequency components
+          output[i] = (lastOut + (0.02 * white)) / 1.02; // More filtering for more low frequencies
+          lastOut = output[i];
+          output[i] *= 3.5; // Lower amplitude for deeper sound
+        }
+      }
+
+      const noiseSource = audioContext.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+      noiseSource.loop = false;
+      return noiseSource;
+    }
+
+    // Note: This function is self-contained: it does not use any global variables.
+    function planToPlayNoise(audioContext, startTime, duration, maxVolume, isHighPitch = false) {
+      let noiseSource = createBrownNoise(audioContext, duration, isHighPitch);
+      let gainNode = audioContext.createGain();
+
+      gainNode.gain.setValueAtTime(0, startTime);
+
+      if (duration >= 6) {
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.4, startTime + 0.5);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + 1.5);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.2, startTime + 4);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.04, startTime + duration - 2);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.0, startTime + duration);
+      } else if (duration >= 3) {
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.4, startTime + 0.5);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + 1.5);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.1, startTime + duration * 0.9);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.0, startTime + duration);
+      } else {
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + 0.5);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.1, startTime + duration * 0.9);
+        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.0, startTime + duration);
+      }
+
+      noiseSource.connect(gainNode).connect(audioContext.destination);
+      noiseSource.start(startTime);
+      return noiseSource;
+    }
+
+    let startTime = null;
+    let startTimeForAudioContext = null;
+    let cycleCount = 0;
+    let latestScheduledNoiseStartTime = null;
+    let latestScheduledNoiseDuration = null;
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let noiseSource;
+    let intervalId;
+    let buttonIntervalId;
+
+    function startNoiseSequence() {
+      // Get UI values.
+      const volume = parseFloat(volumeSlider.value) / 100;
+      const boost = parseFloat(boostSlider.value) / 100;
+      const maxVolume = volume + boost;
+      const totalMinutes = parseInt(minutesSlider.value);
+      const increase = parseFloat(increaseSlider.value);
+      const maximumDuration = parseFloat(maximumSlider.value);
+      const minimumDuration = parseFloat(minimumSlider.value);
+      const inhaleDuration = parseFloat(inhaleSlider.value);
+      const exhaleDuration = parseFloat(exhaleSlider.value);
+
+      // Set/update global variables.
+      const isFirstTime = startTime === null;
+      if (isFirstTime) {
+        startTime = Date.now();
+        startTimeForAudioContext = audioContext.currentTime;
+        cycleCount = 0;
+        latestScheduledNoiseStartTime = null;
+      } else {
+        cycleCount++;
+      }
+
+      // Check if we've exceeded the total time.
+      const elapsedMinutes = (Date.now() - startTime) / (1000 * 60);
+      if (elapsedMinutes >= totalMinutes) {
+        toggleNoise();
+        return;
+      }
+
+      // Calculate next duration.
+      const isInhalePhase = cycleCount % 2 == 0;
+      const nextDuration = Math.min(
+        maximumDuration,
+        Math.max(
+          minimumDuration,
+          (isInhalePhase ? inhaleDuration : exhaleDuration) + (increase * cycleCount)
+        )
+      );
+
+      // Create a function to update the button text.
+      const updateButtonText = () => {
+        const phase = isInhalePhase ? "Inhale" : "Exhale";
+        startButton.textContent = `Stop Noise (${phase} ${latestScheduledNoiseDuration.toFixed(1)}s)`;
+      }
+      
+      // Schedule the next noise.
+      if (isFirstTime) {
+        latestScheduledNoiseStartTime = audioContext.currentTime;
+        latestScheduledNoiseDuration = nextDuration;
+      } else {
+        latestScheduledNoiseStartTime = latestScheduledNoiseStartTime + latestScheduledNoiseDuration;
+        latestScheduledNoiseDuration = nextDuration;
+      }
+      
+      // Use different pitch only when separate inhale/exhale mode is enabled
+      const useDifferentPitch = modeToggle.checked;
+      const isHighPitch = useDifferentPitch && isInhalePhase;
+      noiceSource = planToPlayNoise(audioContext, latestScheduledNoiseStartTime, latestScheduledNoiseDuration, maxVolume, isHighPitch);
+
+      // Schedule to update the button text.
+      intervalId = setTimeout(
+        updateButtonText,
+        (latestScheduledNoiseStartTime - audioContext.currentTime) * 1000
+      );
+
+      // Schedule to start the next noise.
+      buttonIntervalId = setTimeout(
+        startNoiseSequence,
+        (latestScheduledNoiseStartTime + nextDuration - 0.5 - audioContext.currentTime) * 1000
+      );
+    }
+
+    function toggleNoise() {
+      if (startTime !== null) {
+        if (noiseSource) {
+          noiseSource.stop();
+          noiseSource.disconnect();
+        }
+        clearTimeout(intervalId);
+        clearTimeout(buttonIntervalId);
+        startButton.textContent = "Start Noise";
+        startTime = null;
+      } else {
+        startNoiseSequence();
+      }
+    }
+
+    startButton.addEventListener('click', toggleNoise);
+
+  </script>
+</body>
+</html>
