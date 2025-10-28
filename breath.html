@@ -293,22 +293,17 @@
 
       gainNode.gain.setValueAtTime(0, startTime);
 
-      if (duration >= 6) {
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.4, startTime + 0.5);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + 1.5);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.2, startTime + 4);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.04, startTime + duration - 2);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.0, startTime + duration);
-      } else if (duration >= 3) {
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.4, startTime + 0.5);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + 1.5);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.1, startTime + duration * 0.9);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.0, startTime + duration);
-      } else {
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + 0.5);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.1, startTime + duration * 0.9);
-        gainNode.gain.linearRampToValueAtTime(maxVolume * 0.0, startTime + duration);
-      }
+      // Calculate proportional timing for smooth envelopes at any duration
+      const fadeInTime1 = Math.min(0.5, duration * 0.1);
+      const fadeInTime2 = Math.min(1.5, duration * 0.25);
+      const sustainEnd = Math.max(fadeInTime2, duration * 0.65);
+      const fadeOutStart = Math.max(sustainEnd + 0.1, duration - Math.min(0.8, duration * 0.15));
+
+      gainNode.gain.linearRampToValueAtTime(maxVolume * 0.4, startTime + fadeInTime1);
+      gainNode.gain.linearRampToValueAtTime(maxVolume * 1.0, startTime + fadeInTime2);
+      gainNode.gain.linearRampToValueAtTime(maxVolume * 0.3, startTime + sustainEnd);
+      gainNode.gain.linearRampToValueAtTime(maxVolume * 0.08, startTime + fadeOutStart);
+      gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
 
       noiseSource.connect(gainNode).connect(audioContext.destination);
       noiseSource.start(startTime);
