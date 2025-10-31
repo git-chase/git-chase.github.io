@@ -104,6 +104,13 @@
       color: #fff;
     }
 
+    .game-timer {
+      font-size: 16px;
+      margin-top: 15px;
+      color: #666;
+      font-family: monospace;
+    }
+
     .game-grid {
       display: grid;
       grid-template-columns: repeat(4, 80px);
@@ -164,6 +171,80 @@
 
     .color-green {
       background-color: #b8f0b8;
+    }
+
+    .celebration {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 60px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      text-align: center;
+      z-index: 1000;
+      animation: celebration-bounce 0.6s ease-out;
+    }
+
+    @keyframes celebration-bounce {
+      0% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 0;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .celebration h2 {
+      font-size: 48px;
+      margin: 0 0 20px 0;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .celebration p {
+      font-size: 24px;
+      margin: 0 0 30px 0;
+      color: #fff;
+    }
+
+    .celebration button {
+      font-size: 20px;
+      padding: 15px 40px;
+      background-color: #fff;
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .celebration button:hover {
+      background-color: #f0f0f0;
+      transform: scale(1.05);
+    }
+
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: #f0f;
+      position: absolute;
+      animation: confetti-fall 3s linear forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
     }
   </style>
 </head>
@@ -241,6 +322,7 @@
   <div class="game-container">
     <div class="game-instruction" id="gameInstruction">Tap the red</div>
     <div class="game-grid" id="gameGrid"></div>
+    <div class="game-timer" id="gameTimer"></div>
   </div>
 
   <script>
@@ -566,13 +648,21 @@
     // Color Clicking Game Logic
     const gameGrid = document.getElementById('gameGrid');
     const gameInstruction = document.getElementById('gameInstruction');
+    const gameTimer = document.getElementById('gameTimer');
     const COLORS = ['blue', 'green'];
     const GRID_WIDTH = 4;
     const GRID_HEIGHT = 5;
     const TOTAL_RECTANGLES = GRID_WIDTH * GRID_HEIGHT;
+    const GAME_TIMER_DURATION = 0.5 * 60 * 1000; // 3 minutes in milliseconds
+
+    // EASY TOGGLE: Set to false to hide the timer
+    const SHOW_TIMER = true;
 
     let targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
     let rectangles = [];
+    let gameStartTime = null;
+    let isPostTimer = false;
+    let timerInterval = null;
 
     function initializeGrid() {
       gameGrid.innerHTML = '';
@@ -613,25 +703,101 @@
       gameInstruction.textContent = `Tap the ${targetColor}`;
     }
 
+    function updateTimer() {
+      if (!SHOW_TIMER) {
+        gameTimer.style.display = 'none';
+        return;
+      }
+
+      if (gameStartTime === null) {
+        gameTimer.textContent = '';
+        return;
+      }
+
+      const elapsedTime = Date.now() - gameStartTime;
+      const elapsedSeconds = Math.floor(elapsedTime / 1000);
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+
+      const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      if (elapsedTime >= GAME_TIMER_DURATION) {
+        gameTimer.textContent = `Time: ${formattedTime} (overtime mode)`;
+      } else {
+        gameTimer.textContent = `Time: ${formattedTime}`;
+      }
+    }
+
+    function startTimer() {
+      if (timerInterval) return; // Already running
+
+      timerInterval = setInterval(updateTimer, 100);
+      updateTimer(); // Update immediately
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
     function handleRectangleClick(event) {
       const clickedRect = event.target;
       const clickedColor = clickedRect.dataset.color;
 
       if (clickedColor === targetColor) {
-        // Correct color clicked - dissolve and replace
+        // Start timer on first correct click
+        if (gameStartTime === null) {
+          gameStartTime = Date.now();
+          startTimer();
+        }
+
+        // Check if 3 minutes have passed
+        const elapsedTime = Date.now() - gameStartTime;
+        if (elapsedTime >= GAME_TIMER_DURATION) {
+          isPostTimer = true;
+        }
+
+        // Correct color clicked - dissolve
         clickedRect.classList.add('dissolving');
 
         setTimeout(() => {
-          // Choose new random color for this rectangle
-          const newColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-          clickedRect.dataset.color = newColor;
-          clickedRect.className = `game-rectangle color-${newColor}`;
+          if (isPostTimer) {
+            // Post-timer: remove rectangle permanently (keep in grid but invisible)
+            clickedRect.style.opacity = '0';
+            clickedRect.style.pointerEvents = 'none';
+            clickedRect.dataset.dissolved = 'true';
 
-          // Check if game is over (no more target colors)
-          checkGameOver();
+            // Check if all target colors are dissolved
+            checkPostTimerGameState();
+          } else {
+            // Pre-timer: replace with new random color
+            const newColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+            clickedRect.dataset.color = newColor;
+            clickedRect.className = `game-rectangle color-${newColor}`;
+
+            // Check if game is over (no more target colors)
+            checkGameOver();
+          }
         }, 500);
       }
       // If incorrect color, do nothing
+    }
+
+    function checkPostTimerGameState() {
+      // Check how many rectangles are still visible and what colors remain
+      const visibleRectangles = rectangles.filter(rect => rect.dataset.dissolved !== 'true');
+      const hasTargetColor = visibleRectangles.some(rect => rect.dataset.color === targetColor);
+
+      if (!hasTargetColor && visibleRectangles.length > 0) {
+        // All target colors dissolved, switch to the other color
+        targetColor = targetColor === 'blue' ? 'green' : 'blue';
+        updateInstruction();
+      } else if (visibleRectangles.length === 0) {
+        // All rectangles dissolved - game complete!
+        showCelebration();
+      }
     }
 
     function checkGameOver() {
@@ -650,6 +816,65 @@
           initializeGrid();
         }, 2000);
       }
+    }
+
+    function showCelebration() {
+      // Hide instruction
+      gameInstruction.style.display = 'none';
+
+      // Create celebration element
+      const celebration = document.createElement('div');
+      celebration.className = 'celebration';
+      celebration.innerHTML = `
+        <h2>🎉 Congratulations! 🎉</h2>
+        <p>You completed the game!</p>
+        <button id="playAgainBtn">Woohoo</button>
+      `;
+      document.body.appendChild(celebration);
+
+      // Create confetti
+      createConfetti();
+
+      // Add play again button listener
+      document.getElementById('playAgainBtn').addEventListener('click', () => {
+        celebration.remove();
+        resetGame();
+      });
+    }
+
+    function createConfetti() {
+      const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
+
+      for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 100 + 'vw';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.animationDelay = Math.random() * 0.5 + 's';
+          confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+          document.body.appendChild(confetti);
+
+          setTimeout(() => confetti.remove(), 5000);
+        }, i * 30);
+      }
+    }
+
+    function resetGame() {
+      // Stop and reset timer
+      stopTimer();
+      gameStartTime = null;
+      isPostTimer = false;
+
+      // Reset game state
+      targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+      gameInstruction.style.display = 'block';
+
+      // Clear timer display
+      updateTimer();
+
+      // Reinitialize grid
+      initializeGrid();
     }
 
     // Initialize the game when page loads
