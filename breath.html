@@ -181,11 +181,11 @@
     }
 
     .color-blue {
-      background-color: #a8d8ff;
+      background-color: #4a90e2;
     }
 
     .color-green {
-      background-color: #b8f0b8;
+      background-color: #4caf50;
     }
 
     .celebration {
@@ -277,15 +277,15 @@
       <!-- Inhale duration control (always visible) -->
       <div class="control" id="inhaleControl">
         <label for="inhaleSlider">Inhale Duration:</label>
-        <span id="inhaleValue">8</span>s
-        <input type="range" id="inhaleSlider" min="1" max="30" step="1" value="8">
+        <span id="inhaleValue">6</span>s
+        <input type="range" id="inhaleSlider" min="1" max="30" step="1" value="6">
       </div>
-      
+
       <!-- Exhale duration control (always visible, disabled when checkbox unchecked) -->
       <div class="control" id="exhaleControl">
         <label for="exhaleSlider">Exhale Duration:</label>
-        <span id="exhaleValue">8</span>s
-        <input type="range" id="exhaleSlider" min="1" max="30" step="1" value="8">
+        <span id="exhaleValue">6</span>s
+        <input type="range" id="exhaleSlider" min="1" max="30" step="1" value="6">
       </div>
       
       <div class="control">
@@ -394,9 +394,9 @@
       minimumSlider.value = 4;
       minimumValue.textContent = minimumSlider.value;
 
-      inhaleSlider.value = 8;
+      inhaleSlider.value = 6;
       inhaleValue.textContent = inhaleSlider.value;
-      exhaleSlider.value = 8;
+      exhaleSlider.value = 6;
       exhaleValue.textContent = exhaleSlider.value;
     });
 
@@ -715,7 +715,7 @@
     }
 
     function updateInstruction() {
-      const colorSpan = `<span style="color: ${targetColor === 'blue' ? '#a8d8ff' : '#b8f0b8'}">${targetColor}</span>`;
+      const colorSpan = `<span style="color: ${targetColor === 'blue' ? '#4a90e2' : '#4caf50'}">${targetColor}</span>`;
       gameInstruction.innerHTML = `Tap the ${colorSpan}`;
     }
 
