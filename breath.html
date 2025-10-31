@@ -131,7 +131,11 @@
     }
 
     .game-rectangle.dissolving {
-      animation: dissolve 0.5s ease-out forwards;
+      animation: dissolve 2s ease-out forwards;
+    }
+
+    .game-rectangle.fading-in {
+      animation: fadeIn 2s ease-in forwards;
     }
 
     @keyframes dissolve {
@@ -142,6 +146,17 @@
       100% {
         opacity: 0;
         transform: scale(0.5);
+      }
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
       }
     }
 
@@ -700,7 +715,8 @@
     }
 
     function updateInstruction() {
-      gameInstruction.textContent = `Tap the ${targetColor}`;
+      const colorSpan = `<span style="color: ${targetColor === 'blue' ? '#a8d8ff' : '#b8f0b8'}">${targetColor}</span>`;
+      gameInstruction.innerHTML = `Tap the ${colorSpan}`;
     }
 
     function updateTimer() {
@@ -777,10 +793,18 @@
             clickedRect.dataset.color = newColor;
             clickedRect.className = `game-rectangle color-${newColor}`;
 
+            // Add fade-in animation
+            clickedRect.classList.add('fading-in');
+
+            // Remove the fading-in class after animation completes
+            setTimeout(() => {
+              clickedRect.classList.remove('fading-in');
+            }, 2000);
+
             // Check if game is over (no more target colors)
             checkGameOver();
           }
-        }, 500);
+        }, 2000);
       }
       // If incorrect color, do nothing
     }
