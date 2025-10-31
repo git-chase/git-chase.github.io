@@ -668,10 +668,10 @@
     const GRID_WIDTH = 4;
     const GRID_HEIGHT = 5;
     const TOTAL_RECTANGLES = GRID_WIDTH * GRID_HEIGHT;
-    const GAME_TIMER_DURATION = 0.5 * 60 * 1000; // 3 minutes in milliseconds
+    const GAME_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
 
     // EASY TOGGLE: Set to false to hide the timer
-    const SHOW_TIMER = true;
+    const SHOW_TIMER = false;
 
     let targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
     let rectangles = [];
