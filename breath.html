@@ -828,17 +828,9 @@
       const hasTargetColor = rectangles.some(rect => rect.dataset.color === targetColor);
 
       if (!hasTargetColor) {
-        // Player wins! Show rainbow rows
-        rectangles.forEach((rect, index) => {
-          const row = Math.floor(index / GRID_WIDTH);
-          rect.classList.add(`rainbow-row-${row}`);
-        });
-
-        // After celebration, switch to opposite color and reset grid
+        // No more target colors - switch to the other color
         targetColor = targetColor === 'blue' ? 'green' : 'blue';
-        setTimeout(() => {
-          initializeGrid();
-        }, 2000);
+        updateInstruction();
       }
     }
 
