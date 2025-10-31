@@ -114,13 +114,13 @@
     .game-grid {
       display: grid;
       grid-template-columns: repeat(4, 80px);
-      grid-template-rows: repeat(5, 80px);
+      grid-template-rows: repeat(4, 129px);
       gap: 10px;
     }
 
     .game-rectangle {
       width: 80px;
-      height: 80px;
+      height: 129px;
       border-radius: 8px;
       cursor: pointer;
       transition: opacity 0.3s ease, transform 0.1s ease;
@@ -666,7 +666,7 @@
     const gameTimer = document.getElementById('gameTimer');
     const COLORS = ['blue', 'green'];
     const GRID_WIDTH = 4;
-    const GRID_HEIGHT = 5;
+    const GRID_HEIGHT = 4;
     const TOTAL_RECTANGLES = GRID_WIDTH * GRID_HEIGHT;
     const GAME_TIMER_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
 
