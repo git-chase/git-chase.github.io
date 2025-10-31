@@ -86,6 +86,85 @@
       margin-bottom: 10px;
       text-align: center;
     }
+
+    /* Game styles */
+    .game-container {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    .game-instruction {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      grid-template-rows: repeat(5, 80px);
+      gap: 10px;
+    }
+
+    .game-rectangle {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.3s ease, transform 0.1s ease;
+    }
+
+    .game-rectangle:hover {
+      transform: scale(0.95);
+    }
+
+    .game-rectangle.dissolving {
+      animation: dissolve 0.5s ease-out forwards;
+    }
+
+    @keyframes dissolve {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+    }
+
+    .game-rectangle.rainbow-row-0 {
+      background-color: #ffb3ba !important; /* Pastel red */
+    }
+
+    .game-rectangle.rainbow-row-1 {
+      background-color: #ffdfba !important; /* Pastel orange */
+    }
+
+    .game-rectangle.rainbow-row-2 {
+      background-color: #ffffba !important; /* Pastel yellow */
+    }
+
+    .game-rectangle.rainbow-row-3 {
+      background-color: #baffc9 !important; /* Pastel green */
+    }
+
+    .game-rectangle.rainbow-row-4 {
+      background-color: #bae1ff !important; /* Pastel blue */
+    }
+
+    .color-blue {
+      background-color: #a8d8ff;
+    }
+
+    .color-green {
+      background-color: #b8f0b8;
+    }
   </style>
 </head>
 <body>
@@ -156,6 +235,12 @@
         <input type="range" id="minutesSlider" min="1" max="60" step="1" value="60">
       </div>
     </div>
+  </div>
+
+  <!-- Color Clicking Game -->
+  <div class="game-container">
+    <div class="game-instruction" id="gameInstruction">Tap the red</div>
+    <div class="game-grid" id="gameGrid"></div>
   </div>
 
   <script>
@@ -477,6 +562,100 @@
     }
 
     startButton.addEventListener('click', toggleNoise);
+
+    // Color Clicking Game Logic
+    const gameGrid = document.getElementById('gameGrid');
+    const gameInstruction = document.getElementById('gameInstruction');
+    const COLORS = ['blue', 'green'];
+    const GRID_WIDTH = 4;
+    const GRID_HEIGHT = 5;
+    const TOTAL_RECTANGLES = GRID_WIDTH * GRID_HEIGHT;
+
+    let targetColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+    let rectangles = [];
+
+    function initializeGrid() {
+      gameGrid.innerHTML = '';
+      rectangles = [];
+
+      // Create random colors ensuring at least one of each color
+      let colors = [];
+
+      // Add at least one of each color
+      colors.push('blue');
+      colors.push('green');
+
+      // Fill the rest randomly
+      for (let i = 2; i < TOTAL_RECTANGLES; i++) {
+        colors.push(COLORS[Math.floor(Math.random() * COLORS.length)]);
+      }
+
+      // Shuffle the colors array
+      for (let i = colors.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [colors[i], colors[j]] = [colors[j], colors[i]];
+      }
+
+      // Create rectangles
+      for (let i = 0; i < TOTAL_RECTANGLES; i++) {
+        const rect = document.createElement('div');
+        rect.className = `game-rectangle color-${colors[i]}`;
+        rect.dataset.color = colors[i];
+        rect.addEventListener('click', handleRectangleClick);
+        gameGrid.appendChild(rect);
+        rectangles.push(rect);
+      }
+
+      updateInstruction();
+    }
+
+    function updateInstruction() {
+      gameInstruction.textContent = `Tap the ${targetColor}`;
+    }
+
+    function handleRectangleClick(event) {
+      const clickedRect = event.target;
+      const clickedColor = clickedRect.dataset.color;
+
+      if (clickedColor === targetColor) {
+        // Correct color clicked - dissolve and replace
+        clickedRect.classList.add('dissolving');
+
+        setTimeout(() => {
+          // Choose new random color for this rectangle
+          const newColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+          clickedRect.dataset.color = newColor;
+          clickedRect.className = `game-rectangle color-${newColor}`;
+
+          // Check if game is over (no more target colors)
+          checkGameOver();
+        }, 500);
+      }
+      // If incorrect color, do nothing
+    }
+
+    function checkGameOver() {
+      const hasTargetColor = rectangles.some(rect => rect.dataset.color === targetColor);
+
+      if (!hasTargetColor) {
+        // Player wins! Show rainbow rows
+        rectangles.forEach((rect, index) => {
+          const row = Math.floor(index / GRID_WIDTH);
+          rect.classList.add(`rainbow-row-${row}`);
+        });
+
+        // After celebration, switch to opposite color and reset grid
+        targetColor = targetColor === 'blue' ? 'green' : 'blue';
+        setTimeout(() => {
+          initializeGrid();
+        }, 2000);
+      }
+    }
+
+    // Initialize the game when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeGrid();
+    });
 
   </script>
 </body>
